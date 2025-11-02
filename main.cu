@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 #include <errno.h>
 #include <cuda_runtime.h>
@@ -71,25 +72,32 @@ void prime_dividers(uint64_t last_numer, uint32_t *primes, uint32_t *primes_size
   *primes_size = p_size;
 }
 
-int main(int argc, char *argv[]) {
+void parse_args(int argc, char *argv[], uint64_t *left_border, uint64_t *right_border) {
   if (argc != 3) {
     printf("Usage: %s <start_number> <end_number>\n", argv[0]);
-    return 1;
+    exit(1);
   }
   char *endptr_left, *endptr_right;
   errno = 0;
-  uint64_t left_border = llabs(strtoul(argv[1], &endptr_left, 10));
-  uint64_t right_border = llabs(strtoul(argv[2], &endptr_right, 10));
+  *left_border = llabs(strtoul(argv[1], &endptr_left, 10));
+  *right_border = llabs(strtoul(argv[2], &endptr_right, 10));
   if (errno == ERANGE || endptr_left == argv[1] || endptr_right == argv[2]) {
-    printf("Worng start or end numbers\n");
-    return 1;
+    printf("Worng start or end number\n");
+    exit(1);
   }
-  left_border = MAX(left_border, 3);
-  if ((left_border & 1) == 0) ++left_border;
-  if (right_border <= left_border) {
+  *left_border = MAX(*left_border, 3);
+  if ((*left_border & 1) == 0) ++*left_border;
+  if (*right_border <= *left_border) {
     printf("Last number must be greater than the first number.\n");
-    return 1;
+    exit(1);
   }
+}
+
+int main(int argc, char *argv[]) {
+  uint64_t left_border = 0;
+  uint64_t right_border = 0;
+  parse_args(argc, argv, &left_border, &right_border);
+
   uint64_t borders_size = right_border - left_border;
 
   uint64_t chunk_size = MIN(borders_size, CHUNK_SIZE);
